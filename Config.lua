@@ -2,14 +2,14 @@ Config = {}
 ps = {}
 
 Config.Debug = false -- Set true to turn ps_lib debug prints on, false to turn them off
-Config.Inventory = "auto" -- auto, ox_inventory, qb-inventory, qb-inventory, lj-inventory, tgiann-inventory, jpr-inventory
-Config.Target = "auto" -- auto, ox_target, qb-target, interact
+Config.Inventory = "ox_inventory" -- auto, ox_inventory, qb-inventory, qb-inventory, lj-inventory, tgiann-inventory, jpr-inventory
+Config.Target = "ox_target" -- auto, ox_target, qb-target, interact
 Config.EmoteMenu = "rpemotes" -- rpemotes, dpemotes, scully, anything else for custom
 Config.Notify = "ox" -- qb, ox, ps, esx, mad_thoughts, okok, lation
 Config.Menus = "ox" -- qb, ox, ps, lation
 Config.DrawText = "ox" -- qb, ox, ps, lation, okok 
-Config.Banking = "qb" -- qb, okok, Renewed, none
-Config.VehicleKeys = "qb" -- qb, mrnewb, none
+Config.Banking = "Renewed" -- qb, okok, Renewed, none
+Config.VehicleKeys = "qbx_vehiclekeys" -- qb, mrnewb, none
 Config.ConvertQBMenu = false -- Convert qb-menu to ps-ui context menu and qb-input to ps-ui input
 
 Config.Progressbar = { -- these are DEFAULT values, you can override them in the progressbar function
@@ -20,7 +20,7 @@ Config.Progressbar = { -- these are DEFAULT values, you can override them in the
     Combat = true, -- Disable combat
 }
 
-Config.Logs = "fivemerr" -- fivemerr or fivemanage
+Config.Logs = "hsY7KILAH81BnRglNgQR12znJ706TB43" -- fivemerr or fivemanage
 
 QBCore, ESX, qbx, langs = nil, nil, nil
 

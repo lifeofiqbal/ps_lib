@@ -67,10 +67,21 @@ function ps.getVehicleLabel(model)
 end
 
 function ps.isDead()
-    local isDead = exports.qbx_medical:IsDead()
-    local inLaststand = exports.qbx_medical:IsLaststand()
+    if GetResourceState('p_ambulancejob') == 'started' then
+        local success, deathInfo = pcall(function()
+            return exports.p_ambulancejob:getDeathInfo()
+        end)
 
-    if isDead or inLaststand then return true end
+        if success and deathInfo then
+            return deathInfo.isDead == true
+        end
+    end
+
+    local state = LocalPlayer and LocalPlayer.state
+    if state then
+        return state.isDead == true or state.dead == true or (state.deathType and state.deathType ~= 'none')
+    end
+
     return false
 end
 
