@@ -4,7 +4,18 @@
 --- @description Returns the player object for the given source.
 --- @usage local player = ps.getPlayer(source)
 function ps.getPlayer(source)
-    return qbx:GetPlayer(source)
+    if not source then return nil end
+
+    local success, player = pcall(function()
+        return qbx:GetPlayer(source)
+    end)
+
+    return success and player or nil
+end
+
+local function getPlayerData(source)
+    local player = ps.getPlayer(source) or ps.getPlayerByIdentifier(source) or ps.getOfflinePlayer(source)
+    return player and player.PlayerData or nil
 end
 
 --- @param identifier string
@@ -12,7 +23,13 @@ end
 --- @description Returns the player object for the given identifier.
 --- @usage local player = ps.getPlayerByIdentifier(identifier)
 function ps.getPlayerByIdentifier(identifier)
-    return qbx:GetPlayerByCitizenId(identifier) or qbx:GetOfflinePlayer(identifier)
+    if not identifier then return nil end
+
+    local success, player = pcall(function()
+        return qbx:GetPlayerByCitizenId(identifier) or qbx:GetOfflinePlayer(identifier)
+    end)
+
+    return success and player or nil
 end
 ps.getPlayerByCid = ps.getPlayerByIdentifier
 --- comment
@@ -20,7 +37,13 @@ ps.getPlayerByCid = ps.getPlayerByIdentifier
 --- @return table
 --- @description Returns the offline player object for the given identifier.
 function ps.getOfflinePlayer(identifier)
-    return qbx:GetOfflinePlayer(identifier)
+    if not identifier then return nil end
+
+    local success, player = pcall(function()
+        return qbx:GetOfflinePlayer(identifier)
+    end)
+
+    return success and player or nil
 end
 
 --- @param source any
@@ -36,8 +59,8 @@ end
 --- @description Returns the identifier (citizenid) for the given source.
 --- @usage local identifier = ps.getIdentifier(source)
 function ps.getIdentifier(source)
-    local player = ps.getPlayer(tonumber(source))
-    return player.PlayerData.citizenid
+    local playerData = getPlayerData(tonumber(source) or source)
+    return playerData and playerData.citizenid or nil
 end
 ps.getCid = ps.getIdentifier
 
@@ -48,16 +71,19 @@ ps.getCid = ps.getIdentifier
 --- @usage local source = ps.getSource(identifier)
 --- @note This function assumes that the identifier is a valid citizenid.
 function ps.getSource(identifier)
-    local src = ps.getPlayerByIdentifier(identifier).PlayerData.source
-    return src
+    local playerData = getPlayerData(identifier)
+    return playerData and playerData.source or nil
 end
 
 --- comment
 --- @param source any
 --- @return unknown
 function ps.getPlayerName(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.charinfo.firstname .. " " .. player.PlayerData.charinfo.lastname
+    local playerData = getPlayerData(source)
+    local charinfo = playerData and playerData.charinfo
+    if not charinfo then return nil end
+
+    return (charinfo.firstname or '') .. " " .. (charinfo.lastname or '')
 end
 ps.getName = ps.getPlayerName -- Alias for compatibility
 --- comment
@@ -66,7 +92,10 @@ ps.getName = ps.getPlayerName -- Alias for compatibility
 function ps.getPlayerNameByIdentifier(identifier)
     local player = ps.getPlayerByIdentifier(identifier) or ps.getOfflinePlayer(identifier)
     if not player then return 'Unknown Person' end
-    return player.PlayerData.charinfo.firstname .. " " .. player.PlayerData.charinfo.lastname
+    local charinfo = player.PlayerData and player.PlayerData.charinfo
+    if not charinfo then return 'Unknown Person' end
+
+    return (charinfo.firstname or '') .. " " .. (charinfo.lastname or '')
 end
 ps.getPlayerNameByCid = ps.getPlayerNameByIdentifier -- Alias for compatibility
 
@@ -76,8 +105,7 @@ ps.getPlayerNameByCid = ps.getPlayerNameByIdentifier -- Alias for compatibility
 --- @usage local playerData = ps.getPlayerData(source)
 --- @note This function returns the PlayerData table which contains job, gang, metadata, and charinfo.
 function ps.getPlayerData(source)
-    local player = ps.getPlayer(source) or ps.getPlayerByIdentifier(source) or ps.getOfflinePlayer(source)
-    return player.PlayerData
+    return getPlayerData(source)
 end
 
 --- comment
@@ -86,8 +114,8 @@ end
 --- @return any
 --- @description Returns the metadata value for the given source and metadata key.
 function ps.getMetadata(source, meta)
-    local player = ps.getPlayer(source) or ps.getPlayerByIdentifier(source) or ps.getOfflinePlayer(source)
-    return player.PlayerData.metadata[meta]
+    local playerData = getPlayerData(source)
+    return playerData and playerData.metadata and playerData.metadata[meta] or nil
 end
 
 --- param source any
@@ -95,8 +123,8 @@ end
 --- @return any
 --- @description Returns the character information for the given source and info key.
 function ps.getCharInfo(source, info)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.charinfo[info]
+    local playerData = getPlayerData(source)
+    return playerData and playerData.charinfo and playerData.charinfo[info] or nil
 end
 
 --- @param source number
@@ -104,8 +132,8 @@ end
 --- @description Returns the job data for the given source.
 --- @usage local jobData = ps.getJob(source)
 function ps.getJob(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.job
+    local playerData = getPlayerData(source)
+    return playerData and playerData.job or nil
 end
 
 --- @param source number
@@ -113,8 +141,8 @@ end
 --- @description Returns the job name for the given source.
 --- @usage local jobName = ps.getJobName(source)
 function ps.getJobName(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.job.name
+    local job = ps.getJob(source)
+    return job and job.name or nil
 end
 
 
@@ -122,16 +150,16 @@ end
 --- @return string
 --- @description Returns the job type for the given source.
 function ps.getJobType(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.job.type
+    local job = ps.getJob(source)
+    return job and job.type or nil
 end
 
 --- @param source number
 --- @return boolean
 --- @description Returns whether the player is on duty for the given source.
 function ps.getJobDuty(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.job.onduty
+    local job = ps.getJob(source)
+    return job and job.onduty or false
 end
 
 --- @param source number
@@ -139,21 +167,22 @@ end
 --- @description Returns the job data for the given source and data key.
 --- @usage local jobData = ps.getJobData(source, 'dataKey')
 function ps.getJobData(source, data)
-    local player = ps.getPlayer(source)
+    local job = ps.getJob(source)
+    if not job then return nil end
     
     if not data then
-        return player.PlayerData.job
+        return job
     end
 
-    return player.PlayerData.job[data]
+    return job[data]
 end
 
 --- @param source number
 --- @return table
 --- @description Returns the job grade table for the given source.
 function ps.getJobGrade(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.job.grade
+    local job = ps.getJob(source)
+    return job and job.grade or nil
 end
 
 --- comment
@@ -161,8 +190,8 @@ end
 --- @return number
 --- @description Returns the job grade level for the given source.
 function ps.getJobGradeLevel(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.job.grade.level
+    local grade = ps.getJobGrade(source)
+    return grade and grade.level or 0
 end
 
 --- comment
@@ -170,8 +199,8 @@ end
 --- @return string
 --- @description Returns the job grade name for the given source.
 function ps.getJobGradeName(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.job.grade.name
+    local grade = ps.getJobGrade(source)
+    return grade and grade.name or nil
 end
 
 --- comment
@@ -179,8 +208,8 @@ end
 --- @return number
 --- @description Returns the job grade payment for the given source.
 function ps.getJobGradePay(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.job.payment
+    local job = ps.getJob(source)
+    return job and job.payment or 0
 end
 
 --- comment
@@ -188,8 +217,8 @@ end
 --- @return boolean
 --- @description Returns whether the player is a boss for the given source.
 function ps.isBoss(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.job.isboss
+    local job = ps.getJob(source)
+    return job and job.isboss or false
 end
 
 --- @return table
@@ -306,6 +335,10 @@ function ps.setJob(source, jobName, jobGrade)
     end
     local player = ps.getPlayer(source)
     local job = qbx:GetJobs()[jobName]
+    if not player or not player.PlayerData or not job then
+        return false
+    end
+
     player.PlayerData.job = {
         name = jobName,
         label = job.label,
@@ -416,8 +449,8 @@ end
 ---@return table
 ---@description Returns the gang data for the given source.
 function ps.getGang(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.gang
+    local playerData = getPlayerData(source)
+    return playerData and playerData.gang or nil
 end
 
 --- @param source number
@@ -425,8 +458,8 @@ end
 --- @description Returns the gang name for the given source.
 --- @usage local gangName = ps.getGangName(source)
 function ps.getGangName(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.gang.name
+    local gang = ps.getGang(source)
+    return gang and gang.name or nil
 end
 
 --- @param source number
@@ -434,16 +467,16 @@ end
 --- @description Returns the gang type for the given source.
 --- @usage local gangType = ps.getGangType(source)
 function ps.getGangData(source, data)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.gang[data]
+    local gang = ps.getGang(source)
+    return gang and gang[data] or nil
 end
 
 --- @param source number
 --- @return number
 --- @description Returns the gang grade level for the given source.
 function ps.getGangGrade(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.gang.grade
+    local gang = ps.getGang(source)
+    return gang and gang.grade or nil
 end
 
 --- comment
@@ -451,16 +484,16 @@ end
 --- @return number
 --- @description Returns the gang grade level for the given source.
 function ps.getGangGradeLevel(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.gang.grade.level
+    local grade = ps.getGangGrade(source)
+    return grade and grade.level or 0
 end
 
 --- @param source number
 --- @return string
 --- @description Returns the gang grade name for the given source.
 function ps.getGangGradeName(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.gang.grade.name
+    local grade = ps.getGangGrade(source)
+    return grade and grade.name or nil
 end
 
 --- @param source number
@@ -468,8 +501,8 @@ end
 --- @description Returns whether the player is a gang leader for the given source.
 --- @usage local isLeader = ps.isLeader(source)
 function ps.isLeader(source)
-    local player = ps.getPlayer(source)
-    return player.PlayerData.gang.isboss
+    local gang = ps.getGang(source)
+    return gang and gang.isboss or false
 end
 
 --- @return table
